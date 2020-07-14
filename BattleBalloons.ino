@@ -28,7 +28,10 @@ void loop() {
       break;
     case PLAY:
       playLoop();
-      fortifyLoop();
+      if (balloonHP > 0 && balloonHP < 6) {
+        fortifyLoop();
+      }
+      celebrateLoop();
       break;
     case RESET:
       resetLoop();
@@ -111,16 +114,6 @@ void playLoop() {
     takeDamage();
   }
 
-  //go into fortifying mode when you are alone
-  if (isAlone) {
-    isFortifying = true;
-    fortifyState[0] = GIVING;
-  }
-
-  if (isFortifying) {
-    fortifyLoop();
-  }
-
   //end game manually
   if (buttonMultiClicked()) {
     if (buttonClickCount() == 3) {
@@ -138,14 +131,113 @@ void playLoop() {
   }
 }
 
+Timer fortifyLagTimer;
+#define FORTIFY_LAG_TIME 300
+bool isLagging = false;
+
 void fortifyLoop() {
 
+  //go into fortifying mode when you are alone
+  if (isAlone() && !isFortifying) {
+    isFortifying = true;
+    fortifyState[0] = GIVING;
+  }
+
+  if (isFortifying) {
+    if (!isAlone()) {//uh-oh, I'm not alone anymore
+      if (fortifyLagTimer.isExpired()) {//my lag timer is expired!
+        if (isLagging) {//was I waiting for the timer to expire?
+          isLagging = false;
+          isFortifying = false;
+          fortifyState[0] = WAITING;
+        } else {//should I start lagging?
+          fortifyLagTimer.set(FORTIFY_LAG_TIME);
+          isLagging = true;
+        }
+      }
+    }
+  }
+
+  //actual do the face stuff
+  FOREACH_FACE(f) {
+    if (fortifyState[f] == GIVING) {//listen for neighbors in TAKING
+      if (!isValueReceivedOnFaceExpired(f)) {
+        if (getFortifyState(getLastValueReceivedOnFace(f)) == TAKING) {//Give a health to that neighbor
+          fortifyState[f] = WAITING;
+          takeDamage();
+        }
+      }
+    } else if (fortifyState[f] == WAITING) {//listen for neighbors in GIVING
+      if (!isValueReceivedOnFaceExpired(f)) {
+        if (getFortifyState(getLastValueReceivedOnFace(f)) == GIVING) {
+          fortifyState[f] = TAKING;
+        }
+      }
+    } else if (fortifyState[f] == TAKING) {//listen for neighbors in WAITING
+      if (!isValueReceivedOnFaceExpired(f)) {
+        if (getFortifyState(getLastValueReceivedOnFace(f)) == WAITING) {//take the HP
+          fortifyState[f] = WAITING;
+          gainHP();
+        }
+      }
+    }
+  }
+}
+
+void celebrateLoop() {
+  if (celebrationState == INERT) {
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+        if (getCelebrationState(getLastValueReceivedOnFace(f)) == CROWN || getCelebrationState(getLastValueReceivedOnFace(f)) == TRAP) {
+          celebrationState = getCelebrationState(getLastValueReceivedOnFace(f));
+        }
+      }
+    }
+  } else if (celebrationState == RESOLVE) {
+    bool foundUnawareNeighbor = false;
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+        if (getCelebrationState(getLastValueReceivedOnFace(f)) == CROWN || getCelebrationState(getLastValueReceivedOnFace(f)) == TRAP) {
+          foundUnawareNeighbor = true;
+        }
+      }
+    }
+
+    if (!foundUnawareNeighbor) {
+      celebrationState = INERT;
+    }
+
+  } else {//this covers both CROWN and TRAP
+    bool foundUnawareNeighbor = false;
+    FOREACH_FACE(f) {
+      if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
+        if (getCelebrationState(getLastValueReceivedOnFace(f)) == INERT) {
+          foundUnawareNeighbor = true;
+        }
+      }
+    }
+
+    if (!foundUnawareNeighbor) {
+      celebrationState = RESOLVE;
+    }
+  }
 }
 
 void takeDamage() {
   balloonHP--;
   if (balloonHP == 0) {
-    //DEATH
+    if (balloonType == WIN) {
+      celebrationState = CROWN;
+    } else if (balloonType == LOSE) {
+      celebrationState = TRAP;
+    }
+  }
+}
+
+void gainHP() {
+  balloonHP++;
+  if (balloonHP > 6) {
+    balloonHP = 6;
   }
 }
 
@@ -154,6 +246,9 @@ void resetLoop() {
   gameMode = SETUP;
 
   FOREACH_FACE(f) {
+    fortifyState[f] = WAITING;//quickly reset that whole mess
+
+    //check if it's safe to change mode fully
     if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
       if (getGameMode(getLastValueReceivedOnFace(f)) == PLAY) {//uh oh, this person doesn't know we're reseting
         gameMode = RESET;
@@ -210,9 +305,23 @@ void setupDisplay() {
 void playDisplay() {
   setColor(OFF);
   //display the balloon HP
-  FOREACH_FACE(f) {
-    if (f < balloonHP) {
-      setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), f);
+  if (balloonHP == 0) {
+    setColor(makeColorHSB(balloonHues[balloonSize], 255, 100));
+  } else {
+    FOREACH_FACE(f) {
+      if (f < balloonHP) {
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), f);
+      }
     }
+  }
+
+  if (isFortifying) {
+    setColorOnFace(WHITE, 0);
+  }
+
+  if (celebrationState == CROWN) {
+    setColor(YELLOW);
+  } else if (celebrationState == TRAP) {
+    setColor(MAGENTA);
   }
 }
