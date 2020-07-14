@@ -165,6 +165,7 @@ void fortifyLoop() {
         if (getFortifyState(getLastValueReceivedOnFace(f)) == TAKING) {//Give a health to that neighbor
           fortifyState[f] = WAITING;
           takeDamage();
+          isFortifying = false;
         }
       }
     } else if (fortifyState[f] == WAITING) {//listen for neighbors in GIVING
