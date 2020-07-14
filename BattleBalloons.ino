@@ -28,6 +28,7 @@ void loop() {
       break;
     case PLAY:
       playLoop();
+      fortifyLoop();
       break;
     case RESET:
       resetLoop();
@@ -105,6 +106,21 @@ void beginGame() {
 
 void playLoop() {
 
+  //take damage on click
+  if (buttonSingleClicked()) {
+    takeDamage();
+  }
+
+  //go into fortifying mode when you are alone
+  if (isAlone) {
+    isFortifying = true;
+    fortifyState[0] = GIVING;
+  }
+
+  if (isFortifying) {
+    fortifyLoop();
+  }
+
   //end game manually
   if (buttonMultiClicked()) {
     if (buttonClickCount() == 3) {
@@ -119,6 +135,17 @@ void playLoop() {
         gameMode = RESET;
       }
     }
+  }
+}
+
+void fortifyLoop() {
+
+}
+
+void takeDamage() {
+  balloonHP--;
+  if (balloonHP == 0) {
+    //DEATH
   }
 }
 
