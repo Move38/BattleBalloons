@@ -16,6 +16,13 @@ byte balloonType = STANDARD;
 enum celebrationStates {INERT, CROWN, TRAP, RESOLVE};
 byte celebrationState = INERT;
 
+Timer celebrationTimer;
+#define CELEBRATION_TIME 1500
+byte currentCelebrationType = STANDARD;
+
+Timer popTimer;
+#define POP_TIME 150
+
 void setup() {
   randomize();
 }
@@ -191,6 +198,7 @@ void celebrateLoop() {
       if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
         if (getCelebrationState(getLastValueReceivedOnFace(f)) == CROWN || getCelebrationState(getLastValueReceivedOnFace(f)) == TRAP) {
           celebrationState = getCelebrationState(getLastValueReceivedOnFace(f));
+          beginCelebration(celebrationState);
         }
       }
     }
@@ -224,13 +232,21 @@ void celebrateLoop() {
   }
 }
 
+void beginCelebration(byte type) {
+  currentCelebrationType = type;
+  celebrationTimer.set(CELEBRATION_TIME);
+}
+
 void takeDamage() {
   balloonHP--;
   if (balloonHP == 0) {
+    popTimer.set(POP_TIME);
     if (balloonType == WIN) {
       celebrationState = CROWN;
+      beginCelebration(CROWN);
     } else if (balloonType == LOSE) {
       celebrationState = TRAP;
+      beginCelebration(TRAP);
     }
   }
 }
@@ -307,7 +323,17 @@ void playDisplay() {
   setColor(OFF);
   //display the balloon HP
   if (balloonHP == 0) {
-    setColor(makeColorHSB(balloonHues[balloonSize], 255, 100));
+    switch (balloonType) {
+      case STANDARD:
+        setColor(makeColorHSB(balloonHues[balloonSize], 255, 100));
+        break;
+      case WIN:
+        setColor(dim(YELLOW, 100));
+        break;
+      case LOSE:
+        setColor(dim(MAGENTA, 100));
+        break;
+    }
   } else {
     FOREACH_FACE(f) {
       if (f < balloonHP) {
@@ -320,9 +346,43 @@ void playDisplay() {
     setColorOnFace(WHITE, 0);
   }
 
-  if (celebrationState == CROWN) {
-    setColor(YELLOW);
-  } else if (celebrationState == TRAP) {
-    setColor(MAGENTA);
+  if (!popTimer.isExpired()) {
+    byte currentProgress = map(popTimer.getRemaining(), 0, POP_TIME, 0, 3);
+    switch (currentProgress) {
+      case 3:
+        setColor(makeColorHSB(balloonHues[balloonSize], 255, 255));
+        break;
+      case 2:
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 0);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 1);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 5);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 2);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 4);
+        break;
+      case 1:
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 0);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 1);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 5);
+        break;
+      case 0:
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 0);
+        break;
+    }
+  }
+
+  if (!celebrationTimer.isExpired()) {//ooh, the celebration timer is running!
+    byte randomPingFace = random(5);
+    byte otherRandomPingFace = (randomPingFace + random(4)) % 6;
+
+    byte pingBrightness = map(celebrationTimer.getRemaining(), 0, CELEBRATION_TIME, 100, 255);
+
+    if (currentCelebrationType == CROWN) {
+      setColorOnFace(dim(YELLOW, pingBrightness), randomPingFace);
+      setColorOnFace(dim(YELLOW, pingBrightness), otherRandomPingFace);
+    } else {
+      setColorOnFace(dim(MAGENTA, pingBrightness), randomPingFace);
+      setColorOnFace(dim(MAGENTA, pingBrightness), otherRandomPingFace);
+    }
+
   }
 }
