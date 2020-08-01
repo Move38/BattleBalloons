@@ -117,7 +117,7 @@ void beginGame() {
 void playLoop() {
 
   //take damage on click
-  if (buttonSingleClicked()) {
+  if (buttonSingleClicked() && balloonHP > 0) {
     takeDamage();
   }
 
@@ -238,7 +238,12 @@ void beginCelebration(byte type) {
 }
 
 void takeDamage() {
-  balloonHP--;
+  //actually take the damage
+  if (balloonHP > 0) {
+    balloonHP--;
+  }
+
+  //make sure we're not dead
   if (balloonHP == 0) {
     popTimer.set(POP_TIME);
     if (balloonType == WIN) {
@@ -321,23 +326,29 @@ void setupDisplay() {
 
 void playDisplay() {
   setColor(OFF);
+  //real quick, check for buttonDown
+  byte clickDim = 0;
+  if (buttonDown()) {
+    clickDim = 75;
+  }
+
   //display the balloon HP
   if (balloonHP == 0) {
     switch (balloonType) {
       case STANDARD:
-        setColor(makeColorHSB(balloonHues[balloonSize], 255, 100));
+        setColor(makeColorHSB(balloonHues[balloonSize], 255, 100 - clickDim));
         break;
       case WIN:
-        setColor(dim(YELLOW, 100));
+        setColor(dim(YELLOW, 100 - clickDim));
         break;
       case LOSE:
-        setColor(dim(MAGENTA, 100));
+        setColor(dim(MAGENTA, 100 - clickDim));
         break;
     }
   } else {
     FOREACH_FACE(f) {
       if (f < balloonHP) {
-        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), f);
+        setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255 - clickDim), f);
       }
     }
   }
