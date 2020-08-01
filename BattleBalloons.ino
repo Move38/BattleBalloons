@@ -379,18 +379,51 @@ void playDisplay() {
   }
 
   if (!celebrationTimer.isExpired()) {//ooh, the celebration timer is running!
-    byte randomPingFace = random(5);
-    byte otherRandomPingFace = (randomPingFace + random(4)) % 6;
 
-    byte pingBrightness = map(celebrationTimer.getRemaining(), 0, CELEBRATION_TIME, 100, 255);
+    //determine progress
+    byte currentProgress = map(celebrationTimer.getRemaining() % POP_TIME, 0, POP_TIME, 0, 3);
+    byte faceOffset = map(celebrationTimer.getRemaining(), 0, CELEBRATION_TIME, 0, 9);
 
-    if (currentCelebrationType == CROWN) {
-      setColorOnFace(dim(YELLOW, pingBrightness), randomPingFace);
-      setColorOnFace(dim(YELLOW, pingBrightness), otherRandomPingFace);
-    } else {
-      setColorOnFace(dim(MAGENTA, pingBrightness), randomPingFace);
-      setColorOnFace(dim(MAGENTA, pingBrightness), otherRandomPingFace);
+    //determine color
+    Color celebrationColor = YELLOW;
+    if (currentCelebrationType == TRAP) {
+      celebrationColor = MAGENTA;
     }
+
+    switch (currentProgress) {
+      case 3:
+        setColor(celebrationColor);
+        break;
+      case 2:
+        setColorOnFace(celebrationColor, (0 + faceOffset) % 6);
+        setColorOnFace(celebrationColor, (1 + faceOffset) % 6);
+        setColorOnFace(celebrationColor, (5 + faceOffset) % 6);
+        setColorOnFace(celebrationColor, (2 + faceOffset) % 6);
+        setColorOnFace(celebrationColor, (4 + faceOffset) % 6);
+        break;
+      case 1:
+        setColorOnFace(celebrationColor, (0 + faceOffset) % 6);
+        setColorOnFace(celebrationColor, (1 + faceOffset) % 6);
+        setColorOnFace(celebrationColor, (5 + faceOffset) % 6);
+        break;
+      case 0:
+        setColorOnFace(celebrationColor, (0 + faceOffset) % 6);
+        break;
+    }
+
+
+    //    byte randomPingFace = random(5);
+    //    byte otherRandomPingFace = (randomPingFace + random(4)) % 6;
+    //
+    //    byte pingBrightness = map(celebrationTimer.getRemaining(), 0, CELEBRATION_TIME, 100, 255);
+    //
+    //    if (currentCelebrationType == CROWN) {
+    //      setColorOnFace(dim(YELLOW, pingBrightness), randomPingFace);
+    //      setColorOnFace(dim(YELLOW, pingBrightness), otherRandomPingFace);
+    //    } else {
+    //      setColorOnFace(dim(MAGENTA, pingBrightness), randomPingFace);
+    //      setColorOnFace(dim(MAGENTA, pingBrightness), otherRandomPingFace);
+    //    }
 
   }
 }
