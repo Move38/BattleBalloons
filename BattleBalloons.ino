@@ -77,16 +77,14 @@ void setupLoop() {
   }
 
   //listen for long-presses to make us special
-  if (buttonLongPressed()) {
+  if (buttonDoubleClicked()) {
     balloonType = (balloonType + 1) % 3;//increment balloon type (0-1-2)
   }
 
   //begin game
-  if (buttonMultiClicked()) {
-    if (buttonClickCount() == 3) {
-      gameMode = PLAY;
-      beginGame();
-    }
+  if (buttonLongPressed()) {
+    gameMode = PLAY;
+    beginGame();
   }
 
   //look for neighbors pushing me into PLAY
@@ -122,10 +120,8 @@ void playLoop() {
   }
 
   //end game manually
-  if (buttonMultiClicked()) {
-    if (buttonClickCount() == 3) {
-      gameMode = RESET;
-    }
+  if (buttonLongPressed()) {
+    gameMode = RESET;
   }
 
   //look for neighbors pushing me into RESET
