@@ -35,7 +35,7 @@ void loop() {
       break;
     case PLAY:
       playLoop();
-      if (balloonHP > 0 && balloonHP < 6) {
+      if (balloonHP > 0 && balloonHP <= 6) {
         fortifyLoop();
       }
       celebrateLoop();
@@ -141,7 +141,7 @@ bool isLagging = false;
 void fortifyLoop() {
 
   //go into fortifying mode when you are alone
-  if (isAlone() && !isFortifying) {
+  if (isAlone() && !isFortifying && balloonHP > 0) {
     isFortifying = true;
     fortifyState[0] = GIVING;
   }
@@ -168,7 +168,6 @@ void fortifyLoop() {
         if (getFortifyState(getLastValueReceivedOnFace(f)) == TAKING) {//Give a health to that neighbor
           fortifyState[f] = WAITING;
           takeDamage();
-          isFortifying = false;
         }
       }
     } else if (fortifyState[f] == WAITING) {//listen for neighbors in GIVING
@@ -241,6 +240,8 @@ void takeDamage() {
 
   //make sure we're not dead
   if (balloonHP == 0) {
+    //just in case
+    isFortifying = false;
     popTimer.set(POP_TIME);
     if (balloonType == WIN) {
       celebrationState = CROWN;
