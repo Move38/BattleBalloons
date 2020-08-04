@@ -23,11 +23,23 @@ byte currentCelebrationType = STANDARD;
 Timer popTimer;
 #define POP_TIME 150
 
+bool bChangeMode = false;
+
 void setup() {
   randomize();
 }
 
 void loop() {
+  // discard the change mode from a force sleep
+  if (hasWoken()) {
+    bChangeMode = false;
+  }
+
+  //if long-pressed, move to CONNECT mode
+  if (buttonLongPressed()) {
+    bChangeMode = true;
+  }
+
   //loops
   switch (gameMode) {
     case SETUP:
@@ -82,10 +94,19 @@ void setupLoop() {
   }
 
   //begin game
-  if (buttonLongPressed()) {
-    gameMode = PLAY;
-    beginGame();
+
+  if (buttonReleased()) {
+    if (bChangeMode) {
+      gameMode = PLAY;
+      beginGame();
+      bChangeMode = false;
+    }
   }
+
+  //  if (buttonLongPressed()) {
+  //    gameMode = PLAY;
+  //    beginGame();
+  //  }
 
   //look for neighbors pushing me into PLAY
   FOREACH_FACE(f) {
@@ -120,9 +141,16 @@ void playLoop() {
   }
 
   //end game manually
-  if (buttonLongPressed()) {
-    gameMode = RESET;
+  if (buttonReleased()) {
+    if (bChangeMode) {
+      gameMode = RESET;
+      bChangeMode = false;
+    }
   }
+
+  //  if (buttonLongPressed()) {
+  //    gameMode = RESET;
+  //  }
 
   //look for neighbors pushing me into RESET
   FOREACH_FACE(f) {
@@ -319,6 +347,11 @@ void setupDisplay() {
     setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 2);
     setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 4);
   }
+
+  //special little display for the long press
+  if (bChangeMode) {
+    setColor(WHITE);
+  }
 }
 
 void playDisplay() {
@@ -425,5 +458,10 @@ void playDisplay() {
     //      setColorOnFace(dim(MAGENTA, pingBrightness), otherRandomPingFace);
     //    }
 
+  }
+
+  //special little display for the long press
+  if (bChangeMode) {
+    setColor(WHITE);
   }
 }
