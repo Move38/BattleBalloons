@@ -119,6 +119,8 @@ void setupLoop() {
   }
 }
 
+Timer beginTimer;
+
 void beginGame() {
   switch (balloonSize) {
     case SMALL:
@@ -131,6 +133,8 @@ void beginGame() {
       balloonHP = 5 + random(1);
       break;
   }
+
+  beginTimer.set(POP_TIME);
 }
 
 void playLoop() {
@@ -407,6 +411,30 @@ void playDisplay() {
         break;
       case 0:
         setColorOnFace(makeColorHSB(balloonHues[balloonSize], 255, 255), 0);
+        break;
+    }
+  }
+
+  if (!beginTimer.isExpired()) {
+    byte currentProgress = map(beginTimer.getRemaining(), 0, POP_TIME, 0, 3);
+    switch (currentProgress) {
+      case 3:
+        setColor(makeColorHSB(balloonHues[balloonSize], 255, 255));
+        break;
+      case 2:
+        setColorOnFace(WHITE, 0);
+        setColorOnFace(WHITE, 1);
+        setColorOnFace(WHITE, 5);
+        setColorOnFace(WHITE, 2);
+        setColorOnFace(WHITE, 4);
+        break;
+      case 1:
+        setColorOnFace(WHITE, 0);
+        setColorOnFace(WHITE, 1);
+        setColorOnFace(WHITE, 5);
+        break;
+      case 0:
+        setColorOnFace(WHITE, 0);
         break;
     }
   }
