@@ -21,7 +21,7 @@ Timer celebrationTimer;
 byte currentCelebrationType = STANDARD;
 
 Timer popTimer;
-#define POP_TIME 150
+#define POP_TIME 200
 
 bool bChangeMode = false;
 
@@ -149,6 +149,7 @@ void playLoop() {
     if (bChangeMode) {
       gameMode = RESET;
       bChangeMode = false;
+      beginTimer.set(POP_TIME);
     }
   }
 
@@ -161,6 +162,7 @@ void playLoop() {
     if (!isValueReceivedOnFaceExpired(f)) {//neighbor!
       if (getGameMode(getLastValueReceivedOnFace(f)) == RESET) {
         gameMode = RESET;
+        beginTimer.set(POP_TIME);
       }
     }
   }
@@ -203,9 +205,12 @@ void fortifyLoop() {
         }
       }
     } else if (fortifyState[f] == WAITING) {//listen for neighbors in GIVING
-      if (!isValueReceivedOnFaceExpired(f)) {
-        if (getFortifyState(getLastValueReceivedOnFace(f)) == GIVING) {
-          fortifyState[f] = TAKING;
+      //only accept stuff if my health is below 6
+      if (balloonHP < 6) {
+        if (!isValueReceivedOnFaceExpired(f)) {
+          if (getFortifyState(getLastValueReceivedOnFace(f)) == GIVING) {
+            fortifyState[f] = TAKING;
+          }
         }
       }
     } else if (fortifyState[f] == TAKING) {//listen for neighbors in WAITING
@@ -355,6 +360,30 @@ void setupDisplay() {
   //special little display for the long press
   if (bChangeMode) {
     setColor(WHITE);
+  }
+
+  if (!beginTimer.isExpired()) {
+    byte currentProgress = map(beginTimer.getRemaining(), 0, POP_TIME, 0, 3);
+    switch (currentProgress) {
+      case 3:
+        setColor(OFF);
+        break;
+      case 2:
+        setColorOnFace(OFF, 0);
+        setColorOnFace(OFF, 1);
+        setColorOnFace(OFF, 5);
+        setColorOnFace(OFF, 2);
+        setColorOnFace(OFF, 4);
+        break;
+      case 1:
+        setColorOnFace(OFF, 0);
+        setColorOnFace(OFF, 1);
+        setColorOnFace(OFF, 5);
+        break;
+      case 0:
+        setColorOnFace(OFF, 0);
+        break;
+    }
   }
 }
 
