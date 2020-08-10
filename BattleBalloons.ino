@@ -1,6 +1,9 @@
 enum gameModes {SETUP, PLAY, RESET};
 byte gameMode = SETUP;
 
+#define FLASH_INTERVAL 1500
+int millisOffset = 0;
+
 enum fortifyStates {WAITING, GIVING, TAKING};
 byte fortifyState[6] = {WAITING, WAITING, WAITING, WAITING, WAITING, WAITING};
 bool isFortifying = false;
@@ -91,6 +94,7 @@ void setupLoop() {
   //listen for long-presses to make us special
   if (buttonDoubleClicked()) {
     balloonType = (balloonType + 1) % 3;//increment balloon type (0-1-2)
+    millisOffset = millis() % FLASH_INTERVAL;
   }
 
   //begin game
@@ -150,6 +154,7 @@ void playLoop() {
       gameMode = RESET;
       bChangeMode = false;
       beginTimer.set(POP_TIME);
+      millisOffset = millis() % FLASH_INTERVAL;
     }
   }
 
@@ -163,6 +168,7 @@ void playLoop() {
       if (getGameMode(getLastValueReceivedOnFace(f)) == RESET) {
         gameMode = RESET;
         beginTimer.set(POP_TIME);
+        millisOffset = millis() % FLASH_INTERVAL;
       }
     }
   }
@@ -328,12 +334,10 @@ byte getCelebrationState(byte data) {
   return (data & 3);//returns bits [E] [F]
 }
 
-#define FLASH_INTERVAL 1500
-
 void setupDisplay() {
 
   //set the little flashy timing
-  byte brightness = 255 - map(millis() % FLASH_INTERVAL, 0, FLASH_INTERVAL, 0, 255);
+  byte brightness = 255 - map((millis() - millisOffset) % FLASH_INTERVAL, 0, FLASH_INTERVAL, 0, 255);
 
   //set background color
   switch (balloonType) {
