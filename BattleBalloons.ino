@@ -1,3 +1,19 @@
+/*
+ *  Battle Balloons
+ *  by David Page. 2020
+ *  
+ *  Lead development by David Page
+ *  Additional Development by Move38
+ *
+ *  --------------------
+ *  Blinks by Move38
+ *  Brought to life via Kickstarter 2018
+ *
+ *  @madewithblinks
+ *  www.move38.com
+ *  --------------------
+ */
+ 
 enum gameModes {SETUP, PLAY, RESET};
 byte gameMode = SETUP;
 
